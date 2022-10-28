@@ -88,8 +88,8 @@ func OpenDatabase(endpoint string, dbName string) *sql.DB {
 		}
 	}
 	db.SetConnMaxLifetime(time.Minute * 3)
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
+	//db.SetMaxOpenConns(10)
+	//db.SetMaxIdleConns(10)
 
 	return db
 }
@@ -104,7 +104,7 @@ func main() {
 	// TODO: config
 	server := "172.16.4.42:23300"
 	dbName := "tpch10"
-	parallel := 100
+	parallel := 50
 	cycle := 1 * time.Second
 
 	db := OpenDatabase(server, dbName)
