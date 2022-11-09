@@ -102,15 +102,14 @@ func main() {
 	}
 
 	// TODO: config
-	server := "172.16.4.42:23300"
-	dbName := "tpch10"
-	parallel := 50
+	server := "127.0.0.1:4000"
+	dbName := "test"
+	parallel := 30
 	cycle := 1 * time.Second
+	statement := "select * from t"
+	var res int32 = 1
 
 	db := OpenDatabase(server, dbName)
-
-	statement := "select count(*) from part where p_name like '%green%almond%' and p_name like '%read%apple%' and p_name not like '%yellow%man%' and p_name like '%still%water%' and p_name not like '%ishar%mla%' and P_SIZE not in (11, 45, 14);"
-	var res int32 = 0
 
 	defer func(db *sql.DB) {
 		err := db.Close()
