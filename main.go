@@ -31,11 +31,11 @@ func query(db *sql.DB, statement string, except int32) {
 	err := rows.Scan(&res)
 	log.Debug("query done", zap.Int32("res", res), zap.Error(err))
 	if err != nil {
-		fmt.Println("scan failed:", err)
+		log.Info("query failed", zap.Error(err))
 		return
 	}
 	if res != except {
-		fmt.Printf("result not match, except %v, but got %v\n", except, res)
+		log.Debug("query result not match", zap.Int32("res", res), zap.Int32("except", except))
 	} else {
 		//fmt.Printf("result match, except %v, got %v\n", except, res)
 	}
@@ -104,24 +104,25 @@ func main() {
 	// TODO: config
 	server := "127.0.0.1:4000"
 	dbName := "test"
-	parallel := 30
+	parallel := 40
 	cycle := 1 * time.Second
-	statement := "select * from t"
-	var res int32 = 1
+	//statement := "select * from t"
+	statement := "select a+b from p"
+	var res int32 = 2
 
 	db := OpenDatabase(server, dbName)
 
 	defer func(db *sql.DB) {
 		err := db.Close()
 		if err != nil {
-			fmt.Println("database close failed:", err)
+			log.Error("failed to close db", zap.Error(err))
 		}
 	}(db)
 
 	for i := 0; i < parallel; i++ {
 		go func() {
 			ticker := time.NewTicker(cycle)
-			query(db, statement, res)
+			go query(db, statement, res)
 			for _ = range ticker.C {
 				go query(db, statement, res)
 			}
@@ -133,7 +134,8 @@ func main() {
 		for _ = range ticker.C {
 			log.Info("query status",
 				zap.Int32("totalExecuted", atomic.LoadInt32(&totalExecuted)),
-				zap.Int32("totalReturned", atomic.LoadInt32(&totalReturned)))
+				zap.Int32("totalReturned", atomic.LoadInt32(&totalReturned)),
+				zap.Int32("queued", atomic.LoadInt32(&totalExecuted)-atomic.LoadInt32(&totalReturned)))
 		}
 	}()
 
