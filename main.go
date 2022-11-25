@@ -16,6 +16,7 @@ import (
 
 var totalExecuted int32
 var totalReturned int32
+var totalError int32
 
 func query(db *sql.DB, statement string, except int32) {
 	atomic.AddInt32(&totalExecuted, 1)
@@ -31,13 +32,15 @@ func query(db *sql.DB, statement string, except int32) {
 	err := rows.Scan(&res)
 	log.Debug("query done", zap.Int32("res", res), zap.Error(err))
 	if err != nil {
+		atomic.AddInt32(&totalError, 1)
 		log.Info("query failed", zap.Error(err))
 		return
 	}
 	if res != except {
+		atomic.AddInt32(&totalError, 1)
 		log.Debug("query result not match", zap.Int32("res", res), zap.Int32("except", except))
 	} else {
-		//fmt.Printf("result match, except %v, got %v\n", except, res)
+
 	}
 }
 
@@ -104,10 +107,10 @@ func main() {
 	// TODO: config
 	server := "127.0.0.1:4000"
 	dbName := "test"
-	parallel := 40
+	parallel := 20
 	cycle := 1 * time.Second
 	//statement := "select * from t"
-	statement := "select a+b from p"
+	statement := "select min(a+b) from p"
 	var res int32 = 2
 
 	db := OpenDatabase(server, dbName)
@@ -135,7 +138,8 @@ func main() {
 			log.Info("query status",
 				zap.Int32("totalExecuted", atomic.LoadInt32(&totalExecuted)),
 				zap.Int32("totalReturned", atomic.LoadInt32(&totalReturned)),
-				zap.Int32("queued", atomic.LoadInt32(&totalExecuted)-atomic.LoadInt32(&totalReturned)))
+				zap.Int32("queued", atomic.LoadInt32(&totalExecuted)-atomic.LoadInt32(&totalReturned)),
+				zap.Int32("totalError", atomic.LoadInt32(&totalError)))
 		}
 	}()
 
