@@ -122,27 +122,49 @@ func main() {
 		}
 	}(db)
 
+	closeChan := make(chan int)
+
 	for i := 0; i < parallel; i++ {
-		go func() {
+		go func(ch <-chan int) {
 			ticker := time.NewTicker(cycle)
-			go query(db, statement, res)
-			for _ = range ticker.C {
-				go query(db, statement, res)
+			for {
+				select {
+				case <-ch:
+					return
+				case <-ticker.C:
+					go query(db, statement, res)
+				}
 			}
-		}()
+
+		}(closeChan)
 	}
 
-	go func() {
+	go func(ch <-chan int) {
 		ticker := time.NewTicker(cycle)
-		for _ = range ticker.C {
-			log.Info("query status",
-				zap.Int32("totalExecuted", atomic.LoadInt32(&totalExecuted)),
-				zap.Int32("totalReturned", atomic.LoadInt32(&totalReturned)),
-				zap.Int32("queued", atomic.LoadInt32(&totalExecuted)-atomic.LoadInt32(&totalReturned)),
-				zap.Int32("totalError", atomic.LoadInt32(&totalError)))
+
+		closed := false
+		for {
+			select {
+			case <-ch:
+				closed = true
+			case <-ticker.C:
+				log.Info("query status",
+					zap.Int32("totalExecuted", atomic.LoadInt32(&totalExecuted)),
+					zap.Int32("totalReturned", atomic.LoadInt32(&totalReturned)),
+					zap.Int32("queued", atomic.LoadInt32(&totalExecuted)-atomic.LoadInt32(&totalReturned)),
+					zap.Int32("totalError", atomic.LoadInt32(&totalError)))
+				if closed && atomic.LoadInt32(&totalExecuted) == atomic.LoadInt32(&totalReturned) {
+					log.Info("all query done")
+					os.Exit(0)
+				}
+			}
 		}
-	}()
+	}(closeChan)
 
 	sig := waitForSigterm()
+	log.Info("received signal", zap.String("sig", sig.String()))
+	log.Warn("query stopped, waiting reporting status, press ctrl+c again to exit")
+	close(closeChan)
+	sig = waitForSigterm()
 	log.Info("received signal", zap.String("sig", sig.String()))
 }
