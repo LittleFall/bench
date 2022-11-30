@@ -152,6 +152,7 @@ func main() {
 					zap.Int32("totalExecuted", atomic.LoadInt32(&totalExecuted)),
 					zap.Int32("totalReturned", atomic.LoadInt32(&totalReturned)),
 					zap.Int32("queued", atomic.LoadInt32(&totalExecuted)-atomic.LoadInt32(&totalReturned)),
+					zap.Int32("totalSuccess", atomic.LoadInt32(&totalReturned)-atomic.LoadInt32(&totalError)),
 					zap.Int32("totalError", atomic.LoadInt32(&totalError)))
 				if closed && atomic.LoadInt32(&totalExecuted) == atomic.LoadInt32(&totalReturned) {
 					log.Info("all query done")
@@ -163,7 +164,7 @@ func main() {
 
 	sig := waitForSigterm()
 	log.Info("received signal", zap.String("sig", sig.String()))
-	log.Warn("query stopped, waiting reporting status, press ctrl+c again to exit")
+	log.Warn("stop send new queries, waiting for queued query, press ctrl+c again to exit")
 	close(closeChan)
 	sig = waitForSigterm()
 	log.Info("received signal", zap.String("sig", sig.String()))
