@@ -24,7 +24,13 @@ func query(db *sql.DB, statement string, except int32) {
 	//startTime := time.Now()
 	log.Debug("will query", zap.String("statement", statement))
 
-	_, err := db.Query(statement)
+	res, err := db.Query(statement)
+	defer func(res *sql.Rows) {
+		err := res.Close()
+		if err != nil {
+			log.Error("failed to close result", zap.Error(err))
+		}
+	}(res)
 	//elapsedTime := time.Since(startTime) / time.Millisecond
 
 	atomic.AddInt32(&totalReturned, 1)
