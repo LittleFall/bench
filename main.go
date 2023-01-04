@@ -139,9 +139,11 @@ func main() {
 				case <-ch:
 					return
 				case <-ticker.C:
-					for i := 0; i < cnt; i++ {
-						query(db, statement, res)
-					}
+					go func() {
+						for i := 0; i < cnt; i++ {
+							query(db, statement, res)
+						}
+					}()
 				}
 			}
 
