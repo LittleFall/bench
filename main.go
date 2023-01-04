@@ -24,18 +24,18 @@ func query(db *sql.DB, statement string, except int32) {
 	//startTime := time.Now()
 	log.Debug("will query", zap.String("statement", statement))
 
-	_ = db.QueryRow(statement)
+	_, err := db.Query(statement)
 	//elapsedTime := time.Since(startTime) / time.Millisecond
 
 	atomic.AddInt32(&totalReturned, 1)
 	//var res int32
 	//err := rows.Scan(&res)
 	//log.Debug("query done", zap.Int32("res", res), zap.Error(err))
-	//if err != nil {
-	//	atomic.AddInt32(&totalError, 1)
-	//	log.Info("query failed", zap.Error(err))
-	//	return
-	//}
+	if err != nil {
+		atomic.AddInt32(&totalError, 1)
+		log.Info("query failed", zap.Error(err))
+		return
+	}
 	//if res != except {
 	//	atomic.AddInt32(&totalError, 1)
 	//	log.Debug("query result not match", zap.Int32("res", res), zap.Int32("except", except))
@@ -91,7 +91,7 @@ func OpenDatabase(endpoint string, dbName string) *sql.DB {
 		}
 	}
 	db.SetConnMaxLifetime(time.Minute * 3)
-	//db.SetMaxOpenConns(10)
+	db.SetMaxOpenConns(10)
 	//db.SetMaxIdleConns(10)
 
 	return db
