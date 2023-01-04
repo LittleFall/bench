@@ -108,6 +108,7 @@ func main() {
 	server := "127.0.0.1:23500"
 	dbName := "test"
 	parallel := 100
+	cnt := 40
 	cycle := 1 * time.Second
 	//statement := "select * from t"
 	statement := "explain analyze select nested.primary_key, nested.secondary_key, nested.timestamp, nested.value, nested. rowAlias from ( select primary_key, secondary_key, timestamp, value, row_number() over (partition by primary_key, secondary_key order by timestamp desc) as rowAlias from test where (primary_key = 0x32 and secondary_key >= 0x31) ) as nested where rowAlias <= 10 order by secondary_key desc;"
@@ -126,13 +127,15 @@ func main() {
 
 	for i := 0; i < parallel; i++ {
 		go func(ch <-chan int) {
-			ticker := time.NewTicker(time.Millisecond * 50)
+			ticker := time.NewTicker(time.Second)
 			for {
 				select {
 				case <-ch:
 					return
 				case <-ticker.C:
-					query(db, statement, res)
+					for i := 0; i < cnt; i++ {
+						query(db, statement, res)
+					}
 				}
 			}
 
