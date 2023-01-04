@@ -105,12 +105,12 @@ func main() {
 	}
 
 	// TODO: config
-	server := "127.0.0.1:4000"
+	server := "127.0.0.1:23500"
 	dbName := "test"
-	parallel := 20
+	parallel := 100
 	cycle := 1 * time.Second
 	//statement := "select * from t"
-	statement := "select min(a+b) from p"
+	statement := "explain analyze select nested.primary_key, nested.secondary_key, nested.timestamp, nested.value, nested. rowAlias from ( select primary_key, secondary_key, timestamp, value, row_number() over (partition by primary_key, secondary_key order by timestamp desc) as rowAlias from test where (primary_key = 0x32 and secondary_key >= 0x31) ) as nested where rowAlias <= 10 order by secondary_key desc;"
 	var res int32 = 2
 
 	db := OpenDatabase(server, dbName)
@@ -126,13 +126,13 @@ func main() {
 
 	for i := 0; i < parallel; i++ {
 		go func(ch <-chan int) {
-			ticker := time.NewTicker(cycle)
+			ticker := time.NewTicker(time.Millisecond * 50)
 			for {
 				select {
 				case <-ch:
 					return
 				case <-ticker.C:
-					go query(db, statement, res)
+					query(db, statement, res)
 				}
 			}
 
