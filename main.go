@@ -24,13 +24,13 @@ func query(db *sql.DB, statement string, except int32) {
 	//startTime := time.Now()
 	log.Debug("will query", zap.String("statement", statement))
 
-	res, err := db.Query(statement)
-	defer func(res *sql.Rows) {
-		err := res.Close()
-		if err != nil {
-			log.Error("failed to close result", zap.Error(err))
-		}
-	}(res)
+	_, err := db.Exec(statement)
+	//defer func(res *sql.Rows) {
+	//	err := res.Close()
+	//	if err != nil {
+	//		log.Error("failed to close result", zap.Error(err))
+	//	}
+	//}(res)
 	//elapsedTime := time.Since(startTime) / time.Millisecond
 
 	atomic.AddInt32(&totalReturned, 1)
@@ -96,7 +96,7 @@ func OpenDatabase(endpoint string, dbName string) *sql.DB {
 			log.Fatal("failed to open db", zap.Error(err))
 		}
 	}
-	db.SetConnMaxLifetime(time.Minute * 3)
+	//db.SetConnMaxLifetime(time.Minute * 3)
 	//db.SetMaxOpenConns(10)
 	//db.SetMaxIdleConns(10)
 
@@ -113,8 +113,8 @@ func main() {
 	// TODO: config
 	server := "127.0.0.1:23500"
 	dbName := "test"
-	parallel := 3000
-	cnt := 1
+	parallel := 100
+	cnt := 30
 	cycle := 1 * time.Second
 	//statement := "select * from t"
 	statement := "explain analyze select nested.primary_key, nested.secondary_key, nested.timestamp, nested.value, nested. rowAlias from ( select primary_key, secondary_key, timestamp, value, row_number() over (partition by primary_key, secondary_key order by timestamp desc) as rowAlias from test where (primary_key = 0x32 and secondary_key >= 0x31) ) as nested where rowAlias <= 10 order by secondary_key desc;"
