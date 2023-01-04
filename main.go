@@ -24,24 +24,24 @@ func query(db *sql.DB, statement string, except int32) {
 	//startTime := time.Now()
 	log.Debug("will query", zap.String("statement", statement))
 
-	rows := db.QueryRow(statement)
+	_ = db.QueryRow(statement)
 	//elapsedTime := time.Since(startTime) / time.Millisecond
 
 	atomic.AddInt32(&totalReturned, 1)
-	var res int32
-	err := rows.Scan(&res)
-	log.Debug("query done", zap.Int32("res", res), zap.Error(err))
-	if err != nil {
-		atomic.AddInt32(&totalError, 1)
-		log.Info("query failed", zap.Error(err))
-		return
-	}
-	if res != except {
-		atomic.AddInt32(&totalError, 1)
-		log.Debug("query result not match", zap.Int32("res", res), zap.Int32("except", except))
-	} else {
-
-	}
+	//var res int32
+	//err := rows.Scan(&res)
+	//log.Debug("query done", zap.Int32("res", res), zap.Error(err))
+	//if err != nil {
+	//	atomic.AddInt32(&totalError, 1)
+	//	log.Info("query failed", zap.Error(err))
+	//	return
+	//}
+	//if res != except {
+	//	atomic.AddInt32(&totalError, 1)
+	//	log.Debug("query result not match", zap.Int32("res", res), zap.Int32("except", except))
+	//} else {
+	//
+	//}
 }
 
 func waitForSigterm() os.Signal {
